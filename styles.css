@@ -1,0 +1,9 @@
+#emojis {
+    display: inline-block;
+}
+
+.emoji {
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+}
