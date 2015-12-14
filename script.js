@@ -1,5 +1,6 @@
 var key = "I8VH1VRNONS3DZD9F";
 var mood_cache = {};
+var currMood = "";
 
 /** 
 All available moods: 
@@ -26,14 +27,13 @@ $(document).ready(function(){
 $(".emoji").click(function(e){
 
 	mood = $(this).attr("mood");
-	$(".song-info").remove();
-	for(var i = 0; i < 10; i++){
-		createPlaylistFromMood(mood, i, .1 + i*.07);
-	}
-	createPlaylistFromSeedSong("SOUKOUX12B0B80B0BA");
+	$(".track").remove();
+	createPlaylistFromMood(mood, .1);
+	//createPlaylistFromSeedSong("SOUKOUX12B0B80B0BA");
 }); 
 
 function createPlaylistFromSeedSong(seedId){
+	currMood = "none";
 	song_type_url = "http://developer.echonest.com/api/v4/song/profile?api_key=I8VH1VRNONS3DZD9F&format=json&id="+seedId+"&bucket=song_type&bucket=audio_summary&bucket=id:spotify&bucket=tracks";
 	$.ajax({
 			type: "GET",
@@ -66,9 +66,8 @@ function createPlaylistFromSeedSong(seedId){
 										console.log(l['title'] + ' not on spotify');
 									} else {
 										id = l['tracks'][0]['foreign_id']
-										title =l['title']
-										artist = l['artist_name'];
-										$("body").append('<p><span class="song-info"> similar song spotify id: ' + id + ' title: ' + title + ' by ' + artist + ' </span>');  
+										song_id = id.split(":")[2];
+										data = searchByTrackId(song_id);  
 									}
 								});
 							}
@@ -81,37 +80,69 @@ function createPlaylistFromSeedSong(seedId){
 
 }
 
-function createPlaylistFromMood(mood, i, energy){
-	if (mood in mood_cache && i < mood_cache[mood].length) {
+function createPlaylistFromMood(mood, energy){
+	currMood = mood;
+	if (mood in mood_cache) {
 		console.log('cached')
-		id = mood_cache[mood][i]['tracks'][0]['foreign_id']
-		title = mood_cache[mood][i]['title']
-		$("body").append('<p><span class="song-info"> spotify id: ' + id + ' title: ' + title + ' </span>');  
+		console.log(mood_cache[mood])
+		for(var i = 0; i < mood_cache[mood].length; i++){
+			$("body").append(
+			'<div class="track"> ' +
+				'<p>' + mood_cache[mood][i]['name'] + '</p>' +
+				'<p>' + mood_cache[mood][i]['artists'][0]['name'] + '</p>' +
+				'<p>' + mood_cache[mood][i]['album']['name'] + '</p>' +
+				'<img class = "album-img" data-preview-url="' + mood_cache[mood][i]['preview_url'] + 
+					'" src="' + mood_cache[mood][i]['album']['images'][1]['url'] + '"/>' +
+			'</div>');
+		}
 	} else {
 		mood_cache[mood] = [];
-		min_energy = energy - .05;
-		max_energy = energy + .05;
-		if (mood == "christmas") {
-			apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key=I8VH1VRNONS3DZD9F&format=json&song_type=christmas&bucket=id:spotify&bucket=tracks&min_energy="+min_energy+"&max_energy="+max_energy;
-		} else {
-			apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key=I8VH1VRNONS3DZD9F&format=json&bucket=id:spotify&bucket=tracks&mood="+mood+"&min_energy="+min_energy+"&max_energy="+max_energy;
-		}
-		$.ajax({
-			type: "GET",
-			url: apiUrl,
-			success: function(data) {
-				console.log(data);
-				var n = Math.min(15, data['response']['songs'].length);
-				var random = Math.floor((Math.random() * n));
-				while(data['response']['songs'][random]['tracks'].length == 0){
-					random = Math.floor((Math.random() * n));
-					console.log('no spotify id');
-				}
-				id = data['response']['songs'][random]['tracks'][0]['foreign_id']
-				mood_cache[mood].push(data['response']['songs'][random]);
-				title = data['response']['songs'][random]['title']
-				$("body").append('<p><span class="song-info"> spotify id: ' + id + ' title: ' + title + ' </span>');  	
+		for(var i = 0; i < 15; i++) {
+			min_energy = (energy + i*.05) - .05;
+			max_energy = (energy + i*.05) + .05;
+			if (mood == "christmas") {
+				apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key=I8VH1VRNONS3DZD9F&format=json&song_type=christmas&bucket=id:spotify&bucket=tracks&min_energy="+min_energy+"&max_energy="+max_energy;
+			} else {
+				apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key=I8VH1VRNONS3DZD9F&format=json&bucket=id:spotify&bucket=tracks&mood="+mood+"&min_energy="+min_energy+"&max_energy="+max_energy;
 			}
-		});
+			$.ajax({
+				type: "GET",
+				url: apiUrl,
+				success: function(data) {
+					console.log(data);
+					var n = Math.min(15, data['response']['songs'].length);
+					var random = Math.floor((Math.random() * n));
+					while(data['response']['songs'][random]['tracks'].length == 0){
+						random = Math.floor((Math.random() * n));
+						console.log('no spotify id');
+					}
+					id = data['response']['songs'][random]['tracks'][0]['foreign_id']
+					
+					song_id = id.split(":")[2];
+					searchByTrackId(song_id); 
+						
+				}
+			});
+		}
 	}
 };
+
+function searchByTrackId(id){
+	searchUrl = "https://api.spotify.com/v1/tracks/" + id
+	$.ajax({
+			type: "GET",
+			url: searchUrl,
+			success: function(data) {
+				console.log(data);	
+					$("body").append(
+	        			'<div class="track"> ' +
+	    					'<p>' + data['name'] + '</p>' +
+	    					'<p>' + data['artists'][0]['name'] + '</p>' +
+							'<p>' + data['album']['name'] + '</p>' +
+	        				'<img class = "album-img" data-preview-url="' + data['preview_url'] + 
+	        					'" src="' + data['album']['images'][1]['url'] + '"/>' +
+	        			'</div>');
+					mood_cache[currMood].push(data);
+		    } 
+	});
+}
