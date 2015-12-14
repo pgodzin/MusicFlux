@@ -171,3 +171,19 @@ function searchByMood(mood){
 		}
 	});
 };
+
+function testAPI (min_danceability,max_danceability) {
+		min_danceability = parseFloat(min_danceability).toPrecision(2);
+		max_danceability = parseFloat(max_danceability).toPrecision(2);
+apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&format=json&bucket=id:spotify&bucket=tracks&mood="+mood+"&min_energy="+min_energy+"&max_energy="+max_energy+"&min_danceability="+min_danceability+"&max_danceability="+max_danceability+"&results="+maxSearchResults;
+$.ajax({
+			type: "GET",
+			url: apiUrl,
+			success: function(data) {
+			
+				output3 = min_danceability+","+max_danceability+","+data['response']['songs'].length+"\n";
+				// console.log(output3);
+				localStorage.output += output3;
+			}
+		});
+}
