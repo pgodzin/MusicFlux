@@ -93,6 +93,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 	currentSongEnergy = .5; // TODO: don't set here
 	incrementEnergyBy = 0.04; //temp control for tesing
 	seedValue = getAttributeFromCurrentDateTime(mood,energySched);
+	direction = "desc"; // TODO: get actual direction
 	song_type_url = "http://developer.echonest.com/api/v4/song/profile?api_key="+key+"&format=json&id="+seedId+"&bucket=song_type&bucket=audio_summary&bucket=id:spotify&bucket=tracks";
 	$.ajax({
 			type: "GET",
@@ -117,7 +118,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 							types += "&song_type=" + song_type[i];
 						}
 						for(var i = 0; i < maxSearchResults; i++) {
-							if(direction == "desc") i *= -1;
+							if(direction == "desc") incrementEnergyBy = -.04;
 							energy = seed_energy + (i * incrementEnergyBy);
 							danceability = seedValue[1];
 							console.log(energy)
@@ -145,7 +146,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 							}
 
 							similarSongUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+""+types+"&bucket=id:spotify&limit=true&bucket=tracks&bucket=audio_summary&style="+genre+
-							"&min_energy="+min_energy+"&max_energy="+max_energy+"&min_danceability="+min_danceability+"&max_danceability="+max_danceability+"&results=" + maxSearchResults;
+							"&min_energy="+min_energy+"&max_energy="+max_energy+"&min_danceability="+min_danceability+"&max_danceability="+max_danceability+"&sort=energy-"+direction+"&results=" + maxSearchResults;
 							console.log(similarSongUrl);
 							$.ajax({
 								type: "GET",
