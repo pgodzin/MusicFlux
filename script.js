@@ -10,8 +10,8 @@ var maxSearchResults = 15; //Max is 100, controls Echo Nest results
 var danceabilityRangeVari = 0.05; //controls Danceability range used
 var energyRangeVari = 0.05; //controls energy range used
 
-var key = "I8VH1VRNONS3DZD9F"; //Phil's Echo Nest key
-// var key = "ENVDIG8W2BZ1H4OB0"; //Khal's Echo Nest key
+//var key = "I8VH1VRNONS3DZD9F"; //Phil's Echo Nest key
+var key = "ENVDIG8W2BZ1H4OB0"; //Khal's Echo Nest key
 
 var currentSongEnergy = null; // Ensure that current song playing always updates this value
 var userControls = false; // Set if user "takes control" of energy switch 
@@ -48,6 +48,7 @@ $(".emoji").click(function(e){
 
 	mood = $(this).attr("mood");
 	$(".track").remove();
+	//searchByTitle("scar tissue");
 	//createPlaylistFromMood(mood, .1);
 	createPlaylistFromSeedSong("SOUKOUX12B0B80B0BA", true);
 }); 
@@ -64,14 +65,34 @@ $("#switch").click(function (e){
 
 });
 
+function searchByTitle(title){
+	searchUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&title="+title+"&bucket=tracks&sort=artist_familiarity-desc&bucket=id:spotify&limit=true"
+	results = [];
+	$.ajax({
+			type: "GET",
+			url: searchUrl,
+			success: function(data) {
+				$.each(data['response']['songs'], function(i, l){
+					song = {};
+					song['name'] = l['title'];
+					song['artist'] = l['artist_name'];
+					song['id'] = l['id'];
+					song['album'] = l['tracks'][0]['album_name'];
+					results.push(song);
+					
+				});
+				console.log(results);
+				return results;
+			}
+	});
+}
+
 function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 	currMood = "none";
 	mood_cache[currMood] = [];
-	direction = "asc"; // TODO: replace with get
 	currentSongEnergy = .5; // TODO: don't set here
-	if (direction == "asc")
-		minOrMax = "min";
-	else minOrMax = "max";
+	incrementEnergyBy = 0.04; //temp control for tesing
+	seedValue = getAttributeFromCurrentDateTime(mood,energySched);
 	song_type_url = "http://developer.echonest.com/api/v4/song/profile?api_key="+key+"&format=json&id="+seedId+"&bucket=song_type&bucket=audio_summary&bucket=id:spotify&bucket=tracks";
 	$.ajax({
 			type: "GET",
@@ -87,31 +108,59 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 						genre = artistData['response']['terms'][0]['name'];
 						console.log(genre);
 						song_type = data['response']['songs'][0]['song_type'];
-						if (isInitialPlaylist) energy = currentSongEnergy;
-						else  energy = data['response']['songs'][0]['audio_summary']['energy'];
+						
+						if (isInitialPlaylist) seed_energy = currentSongEnergy;
+						else  seed_energy = data['response']['songs'][0]['audio_summary']['energy'];
 					
 						types = "";
 						for (var i = 0; i < song_type.length; i++){
 							types += "&song_type=" + song_type[i];
 						}
-						similarSongUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+""+types+"&bucket=id:spotify&bucket=tracks&style="+genre+"&"+minOrMax+"_energy="+energy+"&sort=energy-"+direction+"&results=" + maxSearchResults;
-						$.ajax({
-							type: "GET",
-							url: similarSongUrl,
-							success: function(data) {
-								console.log(data);
-								$.each(data['response']['songs'], function(i, l){
-									if (l['tracks'].length == 0){
-										console.log(l['title'] + ' not on spotify');
-									} else {
-										id = l['tracks'][0]['foreign_id']
-										song_id = id.split(":")[2];
-										data = searchByTrackId(song_id);  
-									}
-								});
-							}
-						});
+						for(var i = 0; i < maxSearchResults; i++) {
+							if(direction == "desc") i *= -1;
+							energy = seed_energy + (i * incrementEnergyBy);
+							danceability = seedValue[1];
+							console.log(energy)
 
+							// Set the proper min and max for danceability
+							if(danceability==null){ //no danceability requirement set
+								min_danceability = 0.0;
+								max_danceability = 1.0;
+							}
+							else{
+								min_danceability = Math.max( (danceability - danceabilityRangeVari), 0.0);
+								max_danceability = Math.min( (danceability + danceabilityRangeVari), 1.0)
+							}
+							
+							// Set the proper min and max for energy
+							if(energy==null){ //no energy requirement set
+								min_energy = 0.0;
+								max_energy = 1.0;
+							}
+							else{
+								min_energy = Math.max( energy - energyRangeVari, 0.0);
+								max_energy = Math.min( energy + energyRangeVari, 1.0);
+								if(min_energy > 0) min_energy = max_energy - energyRangeVari;
+								if(max_energy < 0) max_energy = min_energy + energyRangeVari;
+							}
+
+							similarSongUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+""+types+"&bucket=id:spotify&limit=true&bucket=tracks&bucket=audio_summary&style="+genre+
+							"&min_energy="+min_energy+"&max_energy="+max_energy+"&min_danceability="+min_danceability+"&max_danceability="+max_danceability+"&results=" + maxSearchResults;
+							console.log(similarSongUrl);
+							$.ajax({
+								type: "GET",
+								url: similarSongUrl,
+								success: function(data) {
+									console.log(data);
+									var n = Math.min(maxSearchResults, data['response']['songs'].length);
+									var random = Math.floor((Math.random() * n));
+									id = data['response']['songs'][random]['tracks'][0]['foreign_id']
+									song_id = id.split(":")[2];
+									searchByTrackId(song_id); 
+										
+								}
+							});
+						}
 					}
 				});
 			}
@@ -128,14 +177,15 @@ function createPlaylistFromMood(mood){
 		console.log('cached')
 		console.log(mood_cache[mood])
 		for(var i = 0; i < mood_cache[mood].length; i++){
-			display_search_songs(mood_cache[mood][i]['name'],  mood_cache[mood][i]['artists'][0]['name'], mood_cache[mood][i]['album']['name'], 
+			display_search_song(mood_cache[mood][i]['name'],  mood_cache[mood][i]['artists'][0]['name'], mood_cache[mood][i]['album']['name'], 
 						mood_cache[mood][i]['album']['images'][1]['url'], mood_cache[mood][i]['preview_url'] );
 		}
 	} else {
 		mood_cache[mood] = [];
 		console.log(seedValue);
 		for(var i = 0; i < maxSearchResults; i++) {
-			if(direction == "desc") i *= -1;
+			direction = "desc";
+			if(direction == "desc") incrementEnergyBy = -0.05;
 			var energy = seedValue[0] + (i * incrementEnergyBy);
 			danceability = seedValue[1];
 
@@ -155,19 +205,21 @@ function createPlaylistFromMood(mood){
 				max_energy = 1.0;
 			}
 			else{
-				min_energy = Math.max( Math.min(0.0, (energy - energyRangeVari)), 0.0);
-				max_energy = Math.min( Math.max(1.0, (energy + energyRangeVari)), 1.0);
+				min_energy = Math.max(energy - energyRangeVari, 0.0);
+				max_energy = Math.min(energy + energyRangeVari, 1.0);
+				if(min_energy > 0) min_energy = max_energy - energyRangeVari;
+				if(max_energy < 0) max_energy = min_energy + energyRangeVari;
 				//console.log(min_energy);
 				//console.log(max_energy);
 			}
 
-			//console.log("Min Energy: "+min_energy+" / Max Energy: "+max_energy+" / Min Danceability:  "+min_danceability+" / Max Danceability: "+max_danceability); 
+			console.log("Min Energy: "+min_energy+" / Max Energy: "+max_energy+" / Min Danceability:  "+min_danceability+" / Max Danceability: "+max_danceability); 
 
 			if (mood == "christmas") {
- 			apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&format=json&song_type=christmas&bucket=id:spotify&bucket=tracks&min_energy="
+ 			apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&format=json&song_type=christmas&bucket=id:spotify&limit=true&bucket=tracks&min_energy="
  				+min_energy+"&max_energy="+max_energy+"&min_danceability="+min_danceability+"&max_danceability="+max_danceability+"&results="+maxSearchResults; 
  			} else {
- 			apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&format=json&bucket=id:spotify&bucket=tracks&mood="+mood+"&min_energy="+min_energy+"&max_energy="
+ 			apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&format=json&bucket=id:spotify&limit=true&bucket=tracks&mood="+mood+"&min_energy="+min_energy+"&max_energy="
  				+max_energy+"&min_danceability="+min_danceability+"&max_danceability="+max_danceability+"&results="+maxSearchResults; 			
  			}
 			$.ajax({
@@ -177,10 +229,6 @@ function createPlaylistFromMood(mood){
 					console.log(data);
 					var n = Math.min(maxSearchResults, data['response']['songs'].length);
 					var random = Math.floor((Math.random() * n));
-					while(data['response']['songs'][random]['tracks'].length == 0){
-						random = Math.floor((Math.random() * n));
-						console.log('no spotify id');
-					}
 					id = data['response']['songs'][random]['tracks'][0]['foreign_id']
 					
 					song_id = id.split(":")[2];
@@ -199,7 +247,7 @@ function searchByTrackId(id){
 			url: searchUrl,
 			success: function(data) {
 				console.log(data);	
-					display_search_songs(data['name'],  data['artists'][0]['name'], data['album']['name'], 
+					display_search_song(data['name'],  data['artists'][0]['name'], data['album']['name'], 
 						data['album']['images'][1]['url'], data['preview_url'] );
 
 					mood_cache[currMood].push(data);
@@ -207,7 +255,7 @@ function searchByTrackId(id){
 	});
 }
 
-function display_search_songs(song_name, artist, album, album_cover, preview_url){
+function display_search_song(song_name, artist, album, album_cover, preview_url){
 $("body").append(
 	'<div class="track"> ' +
 		'<p>' + song_name + '</p>' +
