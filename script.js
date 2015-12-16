@@ -261,6 +261,20 @@ function createPlaylistFromMood(mood){
 	}
 };
 
+/*
+A record is created using an array with the following tuple: [spotifyTrackid, dataJsonObject, songAlreadyPlayedBoolean]
+*/
+function addTrackToLocalStorage(id, data){
+	var record = [];
+	record.push(id);
+	record.push(data);
+	record.push(false);
+
+	console.log(record);
+	
+
+}
+
 function searchByTrackId(id){
 	searchUrl = "https://api.spotify.com/v1/tracks/" + id
 	$.ajax({
