@@ -1,0 +1,357 @@
+body{
+  font-family: chivo, sans-serif;
+  width: 1150px;
+  margin: auto;
+  background-color: #f2e8d3;
+}
+#left-search{
+  width:300px;
+  float:left;
+  border-right:1px solid #858484;
+  /* The left stays still no matter what happens on the right */
+  height:100%;
+}
+#right-playlist{
+  width:850px;
+  float:right;
+}
+
+/* LEFT PANEL */
+/*Search*/
+.left-container{
+  width:255px;
+  margin: auto;
+  position:relative;
+  text-align:center;
+}
+.app-title{
+  font-size: 40px;
+}
+/*Emoji grid*/
+.emoji{
+  width:60px;
+  margin:8px;
+}
+.emoji-display{
+  margin:auto;
+}
+/*Seed song search*/
+.search-seed-display{
+  margin-top: 20px;
+}
+.seed-song-result-container{
+  height:420px;
+  overflow: scroll;
+}
+.seed-song-result{
+  height:50px;
+  border-bottom: 1px solid darkgray;
+  overflow: auto;
+  background-color: darkkhaki;
+  transition: background-color;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+.result-part{
+  float:left;
+}
+.result-part.seed-left{
+  width:70px;
+  text-align: center;
+}
+.seed-album-cover{
+  width:70px;
+}
+.result-part.seed-right{
+  width:100%;
+  text-align: left;
+  padding-left: 10px;
+  padding-top:5px;
+  padding-right: 10px;
+  font-size: 16px;
+}
+.seed-right .song-title, .seed-right .song-artist, .seed-right .song-album{
+  overflow:hidden;
+  white-space: nowrap;
+}
+.seed-right .song-artist{
+  font-size:14px;
+}
+.seed-right .song-album{
+  font-size:13px;
+}
+.seed-song-result:hover{
+  background-color: beige;
+}
+.input-group{
+  width:100%;
+}
+
+/* RIGHT PANEL */
+.no-playlist{
+  text-align:center;
+  width:300px;
+  margin:auto;
+  position:relative;
+  top:200px;
+}
+/*Display playlist*/
+.playlist-display{
+  padding: 20px 30px 20px 30px;
+  margin:auto;
+  background-color: #f2e8d3;
+}
+.playlist-container{
+  overflow: auto;
+}
+.playlist-title{
+  overflow: auto;
+  float:left;
+  min-width: 500px;
+}
+.playlist-title:after{
+  clear:both;
+}
+.playlist-image, .playlist-text-title{
+  float:left;
+}
+.playlist-image img{
+  width:70px;
+  height:70px;
+}
+.playlist-text-title{
+  margin-top:5px;
+  margin-left:10px;
+  margin-right:10px;
+  max-width: 570px;
+  white-space: nowrap;
+  overflow:hidden;
+}
+.playlist-controls{
+  float:right;
+  width:
+}
+.playlist-timestamp{
+  font-size: 12px;
+  margin-bottom: -6px;
+  left:3px;
+}
+.playlist-text-name{
+  font-size:38px;
+}
+.playlist-controls button{
+  width:100%;
+  margin-top:3px;
+  height:30px;
+}
+
+/*Player*/
+.playlist-songs{
+  float:left;
+  width:100%;
+  margin-top: 20px;
+  overflow: hidden;
+}
+.one-player{
+  width:65%;
+  position:relative;
+  left:80px;
+  float:left;
+  margin:auto;
+  margin-top:10px;
+  height:70px;
+  transition: box-shadow, height, width;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+  box-shadow: 1px 1px 3px #888888;
+  border-radius: 3px 3px 3px 3px;
+}
+.player-left{
+  width:13.7%;
+  float:left;
+  height:100%;
+  text-align: center;
+  background-color: white;
+  border-radius: 3px 0px 0px 3px;
+}
+.player-left img{
+  height: 100%;
+  border-radius: 3px 0px 0px 3px;
+}
+.control{
+  background-color: rgba(255, 255, 255, 0.7);
+  display:table;
+  position: relative;
+  height: 100%;
+  width:100%;
+  bottom: 70px;
+  border-radius: 3px 0px 0px 3px;
+}
+.control-buttons{
+  display:table-cell;
+  vertical-align: middle;
+  margin: 0 auto;
+  align-self:center;
+  position: relative;
+}
+.control-buttons div{
+  display: inline-block;
+}
+.player-right{
+  width:86.3%;
+  float:left;
+  padding-left: 10px;
+  padding-top:5px; 
+  padding-bottom:4px;
+  padding-right: 10px;
+  background-color: #f4f4f4;
+  border-radius: 0px 3px 3px 0px;
+}
+.player-title{
+  height:26px;
+  font-size: 17px;
+  font-family: chivo, sans-serif;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.player-album{
+  font-size: 12px;
+  font-family: chivo, sans-serif;
+  color:dimgray;
+}
+.player-artist{
+  height:18px;
+  font-size: 14px;
+  font-family: chivo, sans-serif;
+}
+.player-title,.player-artist, .player-album{
+  overflow:hidden;
+  white-space: nowrap;
+}
+
+/*Current song*/
+.one-player.current-song{
+  width:80%;
+  height:84px;
+}
+.current-song .player-left{
+  width:13.3%;
+}
+.current-song .control{
+  bottom:84px;
+}
+.current-song .player-right{
+  width:86.7%;
+  float:left;
+  padding-bottom:3px;
+}
+.current-song .player-artist{
+  height:19px;
+  font-size: 18px;
+}
+.current-song .player-title{
+  height:32px;
+  font-size: 21px;
+}
+.current-song .player-album{
+  height:25px;
+  font-size: 15px;
+}
+
+.next-song{
+  opacity: 0.5;
+}
+
+.sf-left, .sf-middle, .sf-right{
+  float:left;
+  padding:10px;
+}
+.sf-right{
+  text-align: center;
+  width:30%;
+}
+.sf-left, .sf-middle{
+  width:30%;
+}
+.sf-middle{
+  margin-top:10px;
+  padding-top:3px;
+  border-left: 1px solid #bababa;
+  border-right: 1px solid #bababa;
+  height:80%;
+}
+.btn-faster{
+  background-color: lightyellow;
+  color: indianred;
+}
+.btn-faster:hover, 
+.btn-faster:focus{
+  background-color: #8e4141;
+  color: lightyellow;
+}
+.btn-faster:active, 
+.btn-faster.active{
+  background-color: #723030;
+  color: lightyellow;
+}
+.btn-slower{
+  background-color:#fefff9;
+  color: skyblue;
+}
+.btn-slower:hover, 
+.btn-slower:focus{
+  background-color:#66b1d0;
+  color: #fefff9;
+}
+.btn-slower:active, 
+.btn-slower.active{
+  background-color:#337f9f;
+  color: #fefff9;
+}
+.btn-group{
+  width:200px;
+}
+.sf-right > .btn-group > .btn-default{
+  height: 30px;
+  font-size: 14px;
+}
+
+.sf-right{
+  margin:5px;
+}
+.slower-faster{
+  width:633px;
+  position: relative;
+  margin-top:10px;
+  left: 80px;
+  border: 1px solid darkgray;
+  border-radius: 2px 2px 2px 2px;
+  height:100px;
+  float:left;
+}
+.little-thunder{
+  width:40px;
+  margin-right:10px;
+  float:left;
+}
+.energy-flux{
+  font-weight: 600;
+  font-size: 20px;
+  height:50px;
+  position:relative;
+  top:5px;
+}
+
+.spotify_iframe{
+  background-color: rgb(92, 184, 92);
+  text-align: center;
+  display:block;
+  width:100%;
+  overflow: hidden;
+  margin-top:20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  transition: height;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+}
