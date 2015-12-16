@@ -12,11 +12,11 @@ $(document).ready(function(){
 });
 
 function trigger_display_right(){
-  if(localStorage['playlistStorage'] != undefined ){
+  if(localStorage['playlist_local_dict'] == undefined ){
     display_no_playlist();
   }
   else {
-    
+    display_playlist(JSON.parse(localStorage['playlist_local_dict']));
   }
 }
 

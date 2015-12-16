@@ -296,6 +296,7 @@ function queuePlaylistResultsThenReturnToUI(){
 		}
 		console.log(playlistToDisplay);
 		//console.log(playlistToDisplay);
+		localStorage['playlist_local_dict'] = JSON.stringify(playlistToDisplay);
 		display_playlist(playlistToDisplay);
 	}
 	else{ counter++;}
@@ -511,7 +512,7 @@ function createPlaylistFromMood(mood, songsToKeepInPlaylist){
 					var energyOfSelectedSong = data['response']['songs'][random]['audio_summary']['energy'];
 					searchByTrackId(song_id, energyOfSelectedSong); 
 					songsInCurrentPlaylist.push(song_id);	
-					createPlayWidget(mood);
+					// createPlayWidget(mood);
 					}
 			});
 		}
