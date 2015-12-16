@@ -199,6 +199,7 @@ function createPlayWidget(playlist_name){
 }
 
 function searchByTitle(title){
+	if(title!="" || title!=null){
 	seedSongTitle = title;
 	searchUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key[0]+"&title="+title+"&bucket=tracks&sort=artist_familiarity-desc&bucket=id:spotify&limit=true"
 	results = [];
@@ -217,9 +218,10 @@ function searchByTitle(title){
 					
 				});
 				//console.log(results);
-				// display_seed_suggestions(results);
+				display_seed_suggestions(results);
 			}
 	});
+}
 }
 
 // results is a list of song infos, structure specified in searchByTitle
