@@ -10,8 +10,8 @@ var maxSearchResults = 15; //Max is 100, controls Echo Nest results
 var danceabilityRangeVari = 0.05; //controls Danceability range used
 var energyRangeVari = 0.05; //controls energy range used
 
-//var key = "I8VH1VRNONS3DZD9F"; //Phil's Echo Nest key
-var key = "ENVDIG8W2BZ1H4OB0"; //Khal's Echo Nest key
+var key = "I8VH1VRNONS3DZD9F"; //Phil's Echo Nest key
+//var key = "ENVDIG8W2BZ1H4OB0"; //Khal's Echo Nest key
 
 var currentSongEnergy = null; // Ensure that current song playing always updates this value
 var userControls = false; // Set if user "takes control" of energy switch 
@@ -21,6 +21,8 @@ var seed_song_id = null; //
 
 var mood_cache = {};
 var currMood = "";
+
+var songsInCurrentPlaylist = [];
 
 /** 
 All available moods: 
@@ -49,8 +51,8 @@ $(".emoji").click(function(e){
 	mood = $(this).attr("mood");
 	$(".track").remove();
 	//searchByTitle("scar tissue");
-	//createPlaylistFromMood(mood, .1);
-	createPlaylistFromSeedSong("SOUKOUX12B0B80B0BA", true);
+	createPlaylistFromMood(mood);
+	//createPlaylistFromSeedSong("SOUKOUX12B0B80B0BA", true);
 }); 
 
 //Element doesn't currently exist
@@ -64,6 +66,17 @@ $("#switch").click(function (e){
 	}
 
 });
+
+function createPlayWidget(playlist_name){
+	$("iframe").remove();
+	trackIds = "";
+	for (var i = 0; i < songsInCurrentPlaylist.length; i++){
+		trackIds += songsInCurrentPlaylist[i] + ","
+	}
+	trackIds = trackIds.substring(0, trackIds.length - 1);
+	iframe = "<iframe src=\"https://embed.spotify.com/?uri=spotify:trackset:"+playlist_name+":" + trackIds +"\" width=\"300\" height=\"380\" frameborder=\"0\" allowtransparency=\"true\"></iframe>";
+	$("body").append(iframe);
+}
 
 function searchByTitle(title){
 	searchUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&title="+title+"&bucket=tracks&sort=artist_familiarity-desc&bucket=id:spotify&limit=true"
@@ -81,13 +94,14 @@ function searchByTitle(title){
 					results.push(song);
 					
 				});
-				console.log(results);
+				//console.log(results);
 				return results;
 			}
 	});
 }
 
 function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
+	songsInCurrentPlaylist = [];
 	currMood = "none";
 	mood_cache[currMood] = [];
 	currentSongEnergy = .5; // TODO: don't set here
@@ -99,7 +113,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 			type: "GET",
 			url: song_type_url,
 			success: function(data) {
-				console.log(data);
+				//console.log(data);
 				artistId = data['response']['songs'][0]['artist_id'];
 				genreSearchUrl = "http://developer.echonest.com/api/v4/artist/terms?api_key="+key+"&id="+artistId+"&format=json";
 				$.ajax({
@@ -107,7 +121,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 					url: genreSearchUrl,
 					success: function(artistData) {
 						genre = artistData['response']['terms'][0]['name'];
-						console.log(genre);
+						//console.log(genre);
 						song_type = data['response']['songs'][0]['song_type'];
 						
 						if (isInitialPlaylist) seed_energy = currentSongEnergy;
@@ -121,7 +135,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 							if(direction == "desc") incrementEnergyBy = -.04;
 							energy = seed_energy + (i * incrementEnergyBy);
 							danceability = seedValue[1];
-							console.log(energy)
+							//console.log(energy)
 
 							// Set the proper min and max for danceability
 							if(danceability==null){ //no danceability requirement set
@@ -147,18 +161,20 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 
 							similarSongUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+""+types+"&bucket=id:spotify&limit=true&bucket=tracks&bucket=audio_summary&style="+genre+
 							"&min_energy="+min_energy+"&max_energy="+max_energy+"&min_danceability="+min_danceability+"&max_danceability="+max_danceability+"&sort=energy-"+direction+"&results=" + maxSearchResults;
-							console.log(similarSongUrl);
 							$.ajax({
 								type: "GET",
 								url: similarSongUrl,
 								success: function(data) {
-									console.log(data);
+									//console.log(data);
 									var n = Math.min(maxSearchResults, data['response']['songs'].length);
 									var random = Math.floor((Math.random() * n));
 									id = data['response']['songs'][random]['tracks'][0]['foreign_id']
 									song_id = id.split(":")[2];
 									searchByTrackId(song_id); 
-										
+									songsInCurrentPlaylist.push(song_id);	
+								}, 
+								complete: function(){
+									createPlayWidget();
 								}
 							});
 						}
@@ -170,6 +186,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 }
 
 function createPlaylistFromMood(mood){
+	songsInCurrentPlaylist = [];
 	currMood = mood;
 	var seedValue = getAttributeFromCurrentDateTime(mood,energySched);
 	var incrementEnergyBy = 0.05; //temp control for tesing
@@ -183,7 +200,7 @@ function createPlaylistFromMood(mood){
 		}
 	} else {
 		mood_cache[mood] = [];
-		console.log(seedValue);
+		//console.log(seedValue);
 		for(var i = 0; i < maxSearchResults; i++) {
 			direction = "desc";
 			if(direction == "desc") incrementEnergyBy = -0.05;
@@ -214,7 +231,7 @@ function createPlaylistFromMood(mood){
 				//console.log(max_energy);
 			}
 
-			console.log("Min Energy: "+min_energy+" / Max Energy: "+max_energy+" / Min Danceability:  "+min_danceability+" / Max Danceability: "+max_danceability); 
+			//console.log("Min Energy: "+min_energy+" / Max Energy: "+max_energy+" / Min Danceability:  "+min_danceability+" / Max Danceability: "+max_danceability); 
 
 			if (mood == "christmas") {
  			apiUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key+"&format=json&song_type=christmas&bucket=id:spotify&limit=true&bucket=tracks&min_energy="
@@ -227,15 +244,18 @@ function createPlaylistFromMood(mood){
 				type: "GET",
 				url: apiUrl,
 				success: function(data) {
-					console.log(data);
+					//console.log(data);
 					var n = Math.min(maxSearchResults, data['response']['songs'].length);
 					var random = Math.floor((Math.random() * n));
 					id = data['response']['songs'][random]['tracks'][0]['foreign_id']
 					
 					song_id = id.split(":")[2];
 					searchByTrackId(song_id); 
-						
-				}
+					songsInCurrentPlaylist.push(song_id);	
+					}, 
+					complete: function(){
+						createPlayWidget();
+					}
 			});
 		}
 	}
