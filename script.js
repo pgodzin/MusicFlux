@@ -10,8 +10,14 @@ var maxSearchResults = 15; //Max is 100, controls Echo Nest results
 var danceabilityRangeVari = 0.05; //controls Danceability range used
 var energyRangeVari = 0.05; //controls energy range used
 
+
+//Keys/Codes/Tokens
 var key = "I8VH1VRNONS3DZD9F"; //Phil's Echo Nest key
-//var key = "ENVDIG8W2BZ1H4OB0"; //Khal's Echo Nest key
+// var key = "ENVDIG8W2BZ1H4OB0"; //Khal's Echo Nest key
+var access_code = null;
+var spotifyClientID = "4e23da998a794a88bb254537f72d09f6";
+var spotifyClientSecret = "8be49b8fdd454f50aeffba5126086fbf";
+
 
 var currentSongEnergy = null; // Ensure that current song playing always updates this value
 var userControls = false; // Set if user "takes control" of energy switch 
@@ -51,8 +57,10 @@ $(".emoji").click(function(e){
 	mood = $(this).attr("mood");
 	$(".track").remove();
 	//searchByTitle("scar tissue");
+
 	createPlaylistFromMood(mood);
 	//createPlaylistFromSeedSong("SOUKOUX12B0B80B0BA", true);
+
 }); 
 
 //Element doesn't currently exist
@@ -261,6 +269,20 @@ function createPlaylistFromMood(mood){
 	}
 };
 
+/*
+A record is created using an array with the following tuple: [spotifyTrackid, dataJsonObject, songAlreadyPlayedBoolean]
+*/
+function addTrackToLocalStorage(id, data){
+	var record = [];
+	record.push(id);
+	record.push(data);
+	record.push(false);
+
+	console.log(record);
+	
+
+}
+
 function searchByTrackId(id){
 	searchUrl = "https://api.spotify.com/v1/tracks/" + id
 	$.ajax({
@@ -290,7 +312,7 @@ $("body").append(
 /*********************
 Given a mood and a json object containing the schedule, this function will return the seed attribute value
 Usage: getAttributeFromCurrentDateTime("happy",energySched);
-returns: array with two elements [energyValue, danceabilityValue]
+Returns: array with two elements [energyValue, danceabilityValue]
 NOTE: if it's a weekday, danceability element will be null
 ***********************/
 function getAttributeFromCurrentDateTime(mood, attrSched ){
@@ -315,3 +337,107 @@ function getAttributeFromCurrentDateTime(mood, attrSched ){
 		return queryResult;
 	}
 }
+
+/*********************
+Similar to  getAttributeFromCurrentDateTime except this func will search with a 
+given day (from 0-6, Sun-Sat) and hour (from 0-23, 12am-11pm), both strings.
+Usage: getAttributeWithGivenDayTime("happy", energySched, "0", "23")
+Returns: array with two elements [energyValue, danceabilityValue]
+**********************/
+function getAttributeWithGivenDayTime(mood, attrSched, day, hour){
+	var weekend = false;
+	var queryResult = [];
+
+	if(day == "5" || day == "6"){ //If friday or saturday
+		weekend = true;
+	}
+
+	if(weekend){
+		queryResult.push(attrSched['weekend'][hour][mood]);
+		queryResult.push(attrSched['weekend'][hour]['danceability']);
+		return queryResult;
+	}
+	else{ //Weekday
+		queryResult.push(attrSched['weekend'][hour][mood]);
+		queryResult.push(null);
+		return queryResult;
+	}
+}
+
+
+/*********
+Code for QueryString from http://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-url-parameter
+Used to extract the token information after a spotify user allows access to personal Spotify account. We need
+this functionality to manipulate the Spotify playlist (for exporting)
+*********/
+var QueryString = function () {
+  // This function is anonymous, is executed immediately and 
+  // the return value is assigned to QueryString!
+  var query_string = {};
+  var query = window.location.search.substring(1);
+  var vars = query.split("&");
+  for (var i=0;i<vars.length;i++) {
+    var pair = vars[i].split("=");
+        // If first entry with this name
+    if (typeof query_string[pair[0]] === "undefined") {
+      query_string[pair[0]] = decodeURIComponent(pair[1]);
+        // If second entry with this name
+    } else if (typeof query_string[pair[0]] === "string") {
+      var arr = [ query_string[pair[0]],decodeURIComponent(pair[1]) ];
+      query_string[pair[0]] = arr;
+        // If third or later entry with this name
+    } else {
+      query_string[pair[0]].push(decodeURIComponent(pair[1]));
+    }
+  } 
+    return query_string;
+}();
+
+//used to get the token to access a user's playlists
+function sendToSpotifyUserAuthorizationPage(){
+	searchUrl = "https://accounts.spotify.com/authorize?client_id="+spotifyClientID+"&response_type=code&redirect_uri=http://localhost:8000/auth/";
+	window.location.replace(searchUrl);
+}
+
+// function acquireTokenToAccessUserPlaylists(){
+// 	var str = spotifyClientID + ':' + spotifyClientSecret;
+// 	var loginBase64 = btoa(str);
+// 	console.log(loginBase64);
+// 	searchUrl = "https://accounts.spotify.com/api/token?grant_type=authorization_code&code="+access_code+"&redirect_uri=http://localhost:8000/auth/&client_id="+spotifyClientID+"&client_secret="+spotifyClientSecret;
+// 	$.ajax({
+// 			type: "POST",
+// 			// dataType: "jsonp",
+// 			url: searchUrl,
+// 			// beforeSend: function (xhr) {
+//    //  		xhr.setRequestHeader ("Authorization", "Basic " + loginBase64);
+// 			// 	},
+// 			beforeSend: function(xhr) { 
+// 				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); },
+// 			// 	xhr.setRequestHeader("Authorization", "Basic " + loginBase64); },
+			
+// 			success: function(response) {
+// 				console.log(response);	
+					
+// 		    } 
+// 	});
+// }
+
+function acquireAccessToSpotifyUserPlaylists() {
+	if(QueryString['code']==undefined){
+		sendToSpotifyUserAuthorizationPage(); }
+		access_code = QueryString['code'];
+		console.log(access_code);
+		if (QueryString['error'] != undefined) { 
+			alert("Please allow access to your Spotify account in order to user MusicFlux.");
+			window.location.replace("http://localhost:8000/auth/");
+		}
+	else {
+		acquireTokenToAccessUserPlaylists();
+	};
+}
+
+
+
+
+
+acquireAccessToSpotifyUserPlaylists();
