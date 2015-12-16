@@ -40,25 +40,16 @@ function acquireTokenToAccessUserPlaylists(){
 	var str = spotifyClientID + ':' + spotifyClientSecret;
 	var loginBase64 = 'Basic ' + btoa(str);
 	console.log(loginBase64);
-	searchUrl = 'https://accounts.spotify.com/api/token?grant_type=authorization_code&code='+access_code+'&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauth%2F';
+	searchUrl = 'https://accounts.spotify.com/api/token?grant_type=authorization_code&code='+access_code+'&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauth%2F&client_id='+spotifyClientID+'&client_secret='+spotifyClientSecret;
 	console.log(searchUrl);
 
 	$.ajax({
 			type: 'POST',
-			// dataType: 'jsonp',
 			url: searchUrl,
-			crossDomain: true,
+			
 			headers: {
-				'Content-Type' : 'application/x-www-form-urlencoded',
-				'Authorization' : loginBase64
+				'Content-Type' : 'application/x-www-form-urlencoded'
 			},
-			// beforeSend: function (xhr) {
-   //  		xhr.setRequestHeader ("Authorization", "Basic " + loginBase64);
-			// 	},
-			// beforeSend: function(xhr) { 
-			// 	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); 
-			// 	xhr.setRequestHeader('Authorization', loginBase64);
-			// 	console.log(xhr); },
 			
 			success: function(response) {
 				console.log(response);	
