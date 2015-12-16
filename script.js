@@ -38,10 +38,12 @@ var seedSongAlbumImg = "";
 var seedSongTitle = "";
 
 
+function updateCurrentSongPlayingVariables(){
+	//update all the variables here
+}
 
 // Reset all localStorage
 if(false){ console.log("Cleared localStorage"); localStorage.clear(); }
-
 
 // Iterate through all localStorage
 if(false){
@@ -142,7 +144,7 @@ function saveCurrentPlaylistDateTimeStamp(){
 	currentPlaylistDateTimeStamp = dateTime;
 }
 
-function swapKeys(){
+function swapKeys(){ //will be used if 429 error occurs.
 	var temp;
 	temp = key[0];
 	key[0] = key[1];
@@ -174,7 +176,7 @@ $(".emoji").click(function(e){
 //Element doesn't currently exist
 $("#switch").click(function (e){
 	userControls == "true";
-	// userEnergyDirection = state of switch
+	direction = "GET POSITION OF SWITCH HERE"; //TODO: FIX THIS
 	if(currentMode == "mood"){
 		createPlaylistFromMood(mood);
 	} else if (currentMode == "seed_song"){
@@ -182,6 +184,8 @@ $("#switch").click(function (e){
 	}
 
 });
+
+searchByTitle("test");
 
 function createPlayWidget(playlist_name){
 	$("iframe").remove();
@@ -208,19 +212,20 @@ function searchByTitle(title){
 					song['artist'] = l['artist_name'];
 					song['id'] = l['id'];
 					song['album'] = l['tracks'][0]['album_name'];
+					console.log(song['album']);
 					results.push(song);
 					
 				});
 				//console.log(results);
-				display_search_results(results);
+				// display_seed_suggestions(results);
 			}
 	});
 }
 
 // results is a list of song infos, structure specified in searchByTitle
-function display_search_results(results){
+// function display_seed_suggestions(results){
 
-}
+// }
 
 //this function gets called upon each successful ajax 'complete'. Logic will 
 function queuePlaylistResultsThenReturnToUI(){
@@ -229,9 +234,8 @@ function queuePlaylistResultsThenReturnToUI(){
 		counter = 1;
 		createPlayWidget(currentMood);//setTimeout(function(){ createPlayWidget(currentMood); }, 2000);
 
+		saveImportantVariables(); //Save state before sending results to UI/frontend
 
-// display_search_song(data['name'],  data['artists'][0]['name'], data, 
-// 						data['album']['images'][1]['url'], data['preview_url'] );
 		var dataInArrayOfJSON = [];
 		for (var i = 0; i < currentPlaylist.length; i++) {
 			var temp = 
@@ -242,6 +246,7 @@ function queuePlaylistResultsThenReturnToUI(){
 				"title" : currentPlaylist[i][1]['name'],
 				"artist" : currentPlaylist[i][1]['artists'][0]['name'],
 				"album" : currentPlaylist[i][1]['album']['name'],
+				"energy" : currentPlaylist[i][2]
 			}
 			console.log(temp);
 			dataInArrayOfJSON.push(temp);
@@ -272,6 +277,7 @@ function queuePlaylistResultsThenReturnToUI(){
 		}
 
 		console.log(playlistToDisplay);
+		//Insert UI call to display list HERE
 	}
 	else{ counter++;}
 	
@@ -286,8 +292,6 @@ function getAlbumImageForSeedSongResult(artistId){
 			},
 			error: function(error){ console.log(error); }
 		});
-
-
 }
 
 function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
@@ -295,18 +299,20 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 	//currentMood = seedId;
 	currentPlaylist = []; //reset the currentPlaylist if searching for new one.
 	mood_cache[currentMood] = [];
-	currentSongEnergy = .5; // TODO: don't set here
 	incrementEnergyBy = 0.04; //temp control for tesing
-	seedValue = getAttributeFromCurrentDateTime(mood,energySched);
-	direction = "desc"; // TODO: get actual direction
+	// seedValue = getAttributeFromCurrentDateTime(mood,energySched); //Returns: array with three elements [energyValue, danceabilityValue, "asc"/"desc"]
+	// direction = seedValue[2]; 
 	song_type_url = "http://developer.echonest.com/api/v4/song/profile?api_key="+key[0]+"&format=json&id="+seedId+"&bucket=song_type&bucket=audio_summary&bucket=id:spotify&bucket=tracks";
 	$.ajax({
 			type: "GET",
 			url: song_type_url,
 			success: function(data) {
 				var spotifyArtistId = data['response']['songs'][0]['artist_foreign_ids'][0]['foreign_id'].split(":")[2];
-				artistId = data['response']['songs'][0]['artist_id'];
 				getAlbumImageForSeedSongResult(spotifyArtistId);
+
+				currentSongEnergy = data['response']['songs'][0]['audio_summary']['energy'];
+				artistId = data['response']['songs'][0]['artist_id'];
+				
 				genreSearchUrl = "http://developer.echonest.com/api/v4/artist/terms?api_key="+key[0]+"&id="+artistId+"&format=json";
 				$.ajax({
 					type: "GET",
@@ -327,7 +333,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 						for(var i = 0; i < maxSearchResults; i++) {
 							if(direction == "desc") incrementEnergyBy = -.04;
 							energy = seed_energy + (i * incrementEnergyBy);
-							danceability = seedValue[1];
+							danceability = null;
 							//console.log(energy)
 
 							// Set the proper min and max for danceability
@@ -358,12 +364,13 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 								type: "GET",
 								url: similarSongUrl,
 								success: function(data) {
-									//console.log(data);
+									console.log(data);
 									var n = Math.min(maxSearchResults, data['response']['songs'].length);
 									var random = Math.floor((Math.random() * n));
 									id = data['response']['songs'][random]['tracks'][0]['foreign_id']
 									song_id = id.split(":")[2];
-									searchByTrackId(song_id); 
+									var energyOfSelectedSong = data['response']['songs'][random]['audio_summary']['energy'];
+									searchByTrackId(song_id, energyOfSelectedSong); 
 									songsInCurrentPlaylist.push(song_id);	
 								}, 
 								complete: function(){
@@ -445,7 +452,8 @@ function createPlaylistFromMood(mood){
 					id = data['response']['songs'][random]['tracks'][0]['foreign_id']
 					
 					song_id = id.split(":")[2];
-					searchByTrackId(song_id); 
+					var energyOfSelectedSong = data['response']['songs'][random]['audio_summary']['energy'];
+					searchByTrackId(song_id, energyOfSelectedSong); 
 					songsInCurrentPlaylist.push(song_id);	
 					}
 			});
@@ -454,12 +462,13 @@ function createPlaylistFromMood(mood){
 };
 
 /*
-A record is created using an array with the following tuple: [spotifyTrackid, dataJsonObject, songAlreadyPlayedBoolean]
+A record is created using an array with the following tuple: [spotifyTrackid, dataJsonObject, energy, songAlreadyPlayedBoolean]
 */
-function addTrackToLocalStorage(id, data){
+function addTrackToLocalStorage(id, data, energy){
 	var record = [];
 	record.push(id);
 	record.push(data);
+	record.push(energy);
 	record.push(false);
 
 	currentPlaylist.push(record);
@@ -467,7 +476,7 @@ function addTrackToLocalStorage(id, data){
 	
 }
 
-function searchByTrackId(id){
+function searchByTrackId(id, energy){
 	searchUrl = "https://api.spotify.com/v1/tracks/" + id
 	$.ajax({
 			type: "GET",
@@ -477,7 +486,7 @@ function searchByTrackId(id){
 					display_search_song(data['name'],  data['artists'][0]['name'], data['album']['name'], 
 						data['album']['images'][1]['url'], data['preview_url'] );
 					if(data['preview_url']!= null){
-					addTrackToLocalStorage(id, data);
+					addTrackToLocalStorage(id, data, energy);
 					mood_cache[currentMood].push(data);
 				}
 		    }, 
@@ -501,7 +510,7 @@ $("body").append(
 /*********************
 Given a mood and a json object containing the schedule, this function will return the seed attribute value
 Usage: getAttributeFromCurrentDateTime("happy",energySched);
-Returns: array with two elements [energyValue, danceabilityValue]
+Returns: array with three elements [energyValue, danceabilityValue, "asc"/"desc"]
 NOTE: if it's a weekday, danceability element will be null
 ***********************/
 function getAttributeFromCurrentDateTime(mood, attrSched ){
@@ -510,19 +519,27 @@ function getAttributeFromCurrentDateTime(mood, attrSched ){
 	var hour = date.getHours(); // returns the hour (from 0-23, 12am-11pm)
 	var weekend = false;
 	var queryResult = [];
+	var tempDirection;
 
 	if(day == "5" || day == "6"){ //If friday or saturday
 		weekend = true;
 	}
 
+	var nextHour;
+	if(hour==23){ nextHour = 0; } else { nextHour = hour+1;}
+
 	if(weekend){
 		queryResult.push(attrSched['weekend'][hour][mood]);
 		queryResult.push(attrSched['weekend'][hour]['danceability']);
+		if((queryResult[0] - attrSched['weekend'][nextHour][mood]) < 0 ){ tempDirection = "desc";} else { tempDirection= "asc";}
+		queryResult.push(tempDirection);
 		return queryResult;
 	}
 	else{ //Weekday
-		queryResult.push(attrSched['weekend'][hour][mood]);
+		queryResult.push(attrSched['weekday'][hour][mood]);
 		queryResult.push(null);
+		if((queryResult[0] - attrSched['weekday'][nextHour][mood]) < 0 ){ tempDirection = "desc";} else { tempDirection= "asc";}
+		queryResult.push(tempDirection);
 		return queryResult;
 	}
 }
@@ -531,7 +548,7 @@ function getAttributeFromCurrentDateTime(mood, attrSched ){
 Similar to  getAttributeFromCurrentDateTime except this func will search with a 
 given day (from 0-6, Sun-Sat) and hour (from 0-23, 12am-11pm), both strings.
 Usage: getAttributeWithGivenDayTime("happy", energySched, "0", "23")
-Returns: array with two elements [energyValue, danceabilityValue]
+Returns: array with three elements [energyValue, danceabilityValue, "asc"/"desc"]
 **********************/
 function getAttributeWithGivenDayTime(mood, attrSched, day, hour){
 	var weekend = false;
@@ -541,14 +558,21 @@ function getAttributeWithGivenDayTime(mood, attrSched, day, hour){
 		weekend = true;
 	}
 
+	var nextHour;
+	if(hour==23){ nextHour = 0; } else { nextHour = hour+1;}
+
 	if(weekend){
 		queryResult.push(attrSched['weekend'][hour][mood]);
 		queryResult.push(attrSched['weekend'][hour]['danceability']);
+		if((queryResult[0] - attrSched['weekend'][nextHour][mood]) < 0 ){ tempDirection = "desc";} else { tempDirection= "asc";}
+		queryResult.push(tempDirection);
 		return queryResult;
 	}
 	else{ //Weekday
-		queryResult.push(attrSched['weekend'][hour][mood]);
+		queryResult.push(attrSched['weekday'][hour][mood]);
 		queryResult.push(null);
+		if((queryResult[0] - attrSched['weekday'][nextHour][mood]) < 0 ){ tempDirection = "desc";} else { tempDirection= "asc";}
+		queryResult.push(tempDirection);
 		return queryResult;
 	}
 }
