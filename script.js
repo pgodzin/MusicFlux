@@ -27,6 +27,7 @@ var playlistStorage;  // two dimensional array storing currentPlaylist[] as they
 var playlistStorageCount;
 var currentMood;
 var currentPlaylistDateTimeStamp;
+var currentSongID;
 
 //Non-persistent variables
 var songsInCurrentPlaylist = []; //used for temp play widget functionality
@@ -169,21 +170,20 @@ $(".emoji").click(function(e){
 	createPlaylistFromSeedSong("SOUKOUX12B0B80B0BA", true);
 	console.log(currentMood);
 	}
-
-
 }); 
 
-//Element doesn't currently exist
-$("#switch").click(function (e){
+function energySwitchActuated(){
+	//direction (asc/desc) already set by UI at this point.
 	userControls == "true";
-	direction = "GET POSITION OF SWITCH HERE"; //TODO: FIX THIS
+
+	currentSongEnergy = 0.8; //TODO:GET CURRENT SONGS ENERGY
 	if(currentMode == "mood"){
 		createPlaylistFromMood(mood);
 	} else if (currentMode == "seed_song"){
-		createPlaylistFromSeedSong(seed_song_id, false);
+		createPlaylistFromSeedSong(seed_song_id, true);
 	}
 
-});
+}
 
 searchByTitle("test");
 
@@ -279,7 +279,7 @@ function queuePlaylistResultsThenReturnToUI(){
 		}
 
 		console.log(playlistToDisplay);
-		//Insert UI call to display list HERE
+		//display_playlist(playlistToDisplay);
 	}
 	else{ counter++;}
 	
@@ -408,7 +408,7 @@ function createPlaylistFromMood(mood){
 		mood_cache[mood] = [];
 		//console.log(seedValue);
 		for(var i = 0; i < maxSearchResults; i++) {
-			direction = "desc";
+			if(direction == null){ direction = "desc";} 
 			if(direction == "desc") incrementEnergyBy = -0.04;
 			var energy = seedValue[0] + (i * incrementEnergyBy);
 			danceability = seedValue[1];
