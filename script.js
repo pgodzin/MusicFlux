@@ -200,6 +200,7 @@ function createPlayWidget(playlist_name){
 
 function searchByTitle(title){
 	if(title!="" || title!=null){
+	currentMode = "seed_song";
 	seedSongTitle = title;
 	searchUrl = "http://developer.echonest.com/api/v4/song/search?api_key="+key[0]+"&title="+title+"&bucket=tracks&sort=artist_familiarity-desc&bucket=id:spotify&limit=true"
 	results = [];
@@ -299,6 +300,7 @@ function getAlbumImageForSeedSongResult(artistId){
 function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 	songsInCurrentPlaylist = [];
 	//currentMood = seedId;
+	currentMode = "seed_song";
 	currentPlaylist = []; //reset the currentPlaylist if searching for new one.
 	mood_cache[currentMood] = [];
 	incrementEnergyBy = 0.04; //temp control for tesing
@@ -394,6 +396,7 @@ function createPlaylistFromMood(mood){
 	songsInCurrentPlaylist = [];
 	currentPlaylist = []; //reset the currentPlaylist if searching for new one.
 	currentMood = mood;
+	currentMode = "mood";
 	var seedValue = getAttributeFromCurrentDateTime(mood,energySched);
 	var incrementEnergyBy = 0.04; //temp control for tesing
 	if (mood in mood_cache) {
