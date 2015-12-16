@@ -103,9 +103,14 @@ function searchByTitle(title){
 					
 				});
 				//console.log(results);
-				return results;
+				display_search_results(results);
 			}
 	});
+}
+
+// results is a list of song infos, structure specified in searchByTitle
+function display_search_results(results){
+
 }
 
 function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
@@ -182,7 +187,7 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 									songsInCurrentPlaylist.push(song_id);	
 								}, 
 								complete: function(){
-									createPlayWidget();
+									createPlayWidget("Playlist");
 								}
 							});
 						}
@@ -262,7 +267,7 @@ function createPlaylistFromMood(mood){
 					songsInCurrentPlaylist.push(song_id);	
 					}, 
 					complete: function(){
-						createPlayWidget();
+						createPlayWidget("Playlist");
 					}
 			});
 		}
