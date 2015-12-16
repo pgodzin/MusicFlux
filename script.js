@@ -234,7 +234,7 @@ function queuePlaylistResultsThenReturnToUI(){
 	if(counter==maxSearchResults){
 		console.log("FINISHED QUEUE");
 		counter = 1;
-		createPlayWidget(currentMood);//setTimeout(function(){ createPlayWidget(currentMood); }, 2000);
+		//createPlayWidget(currentMood);//setTimeout(function(){ createPlayWidget(currentMood); }, 2000);
 
 		saveImportantVariables(); //Save state before sending results to UI/frontend
 
@@ -302,8 +302,8 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 	currentPlaylist = []; //reset the currentPlaylist if searching for new one.
 	mood_cache[currentMood] = [];
 	incrementEnergyBy = 0.04; //temp control for tesing
-	// seedValue = getAttributeFromCurrentDateTime(mood,energySched); //Returns: array with three elements [energyValue, danceabilityValue, "asc"/"desc"]
-	// direction = seedValue[2]; 
+	
+	 
 	song_type_url = "http://developer.echonest.com/api/v4/song/profile?api_key="+key[0]+"&format=json&id="+seedId+"&bucket=song_type&bucket=audio_summary&bucket=id:spotify&bucket=tracks";
 	$.ajax({
 			type: "GET",
@@ -323,6 +323,8 @@ function createPlaylistFromSeedSong(seedId, isInitialPlaylist){
 						genre = artistData['response']['terms'][0]['name'];
 						currentMood = genre;
 						//console.log(genre);
+						seedValue = getAttributeFromCurrentDateTime("happy",energySched); //Returns: array with three elements [energyValue, danceabilityValue, "asc"/"desc"]
+						direction = seedValue[2];
 						song_type = data['response']['songs'][0]['song_type'];
 						
 						if (isInitialPlaylist) seed_energy = currentSongEnergy;
